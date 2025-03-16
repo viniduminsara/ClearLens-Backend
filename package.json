@@ -1,0 +1,65 @@
+{
+  "name": "clearlens-backend",
+  "version": "1.0.0",
+  "description": "Express.js Basics and Beyond",
+  "main": "./dist/app.js",
+  "scripts": {
+    "build": "tsc",
+    "postinstall": "npm run build",
+    "dev": "nodemon --files",
+    "prestart": "npm run build",
+    "start": "ts-node ./dist/app.js",
+    "lint": "eslint . --ext .ts",
+    "lint-fix": "eslint . --ext .ts --fix"
+  },
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Leka-Workshop/Express-APIvantage.git"
+  },
+  "author": {
+    "name": "Vinidu Minsara"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Leka-Workshop/Express-APIvantage/issues"
+  },
+  "homepage": "https://github.com/Leka-Workshop/Express-APIvantage#readme",
+  "dependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/crypto-js": "^4.2.2",
+    "@types/jsonwebtoken": "^9.0.9",
+    "await-to-js": "^3.0.0",
+    "bcrypt": "^5.1.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.0",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-async-handler": "^1.2.0",
+    "http-errors": "^2.0.0",
+    "joi": "^17.9.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.4.4",
+    "mongoose-paginate-v2": "^1.9.0",
+    "pg": "^8.11.3",
+    "typeorm": "^0.3.17",
+    "winston": "^3.10.0",
+    "winston-daily-rotate-file": "^4.7.1",
+    "winston-mongodb": "^5.1.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.13",
+    "@types/express": "^4.17.17",
+    "@types/http-errors": "^2.0.2",
+    "@types/mongoose": "^5.11.97",
+    "@types/node": "^20.5.6",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "eslint": "^8.47.0",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
