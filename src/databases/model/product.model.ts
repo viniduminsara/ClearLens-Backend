@@ -1,5 +1,12 @@
 import { Document } from 'mongoose';
 
+export interface FileWithBuffer {
+    originalname: string;
+    buffer: Buffer;
+    mimetype: string;
+    size: number;
+}
+
 export interface IProduct extends Document {
     qty: number,
     name: string,
@@ -9,7 +16,7 @@ export interface IProduct extends Document {
     gender: string,
     weight: string,
     quantity: number,
-    image: string,
+    image: string | FileWithBuffer,
     rating: number,
     price: number,
     newPrice: number,

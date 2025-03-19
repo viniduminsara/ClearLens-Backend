@@ -13,10 +13,10 @@ const schema = new Schema<IProduct>(
         weight: { type: String, required: true },
         quantity: { type: Number, required: true },
         image: { type: String, required: true },
-        rating: { type: Number, required: true },
+        rating: { type: Number, required: false },
         price: { type: Number, required: true },
         newPrice: { type: Number, required: true },
-        trending: { type: Boolean, required: true },
+        trending: { type: Boolean, required: false },
     },
     {
         timestamps: true,

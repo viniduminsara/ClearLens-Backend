@@ -1,10 +1,12 @@
 import {Request, Response, Router} from 'express';
+import multer from 'multer';
 import asyncHandler from 'express-async-handler';
 import * as productService from '../services/product/product.service';
 import {CommonResponseDTO} from '../shared/models/DTO/CommonResponseDTO';
 import {SuccessMessages} from '../shared/enums/messages/success-messages.enum';
 import {IdValidator} from '../shared/middlewares/user-validator.middleware';
 
+const upload = multer({ storage: multer.memoryStorage() });
 const controller = Router();
 
 controller
@@ -35,5 +37,39 @@ controller
             res.status(200).send(new CommonResponseDTO(true, SuccessMessages.GetSuccess, data));
         })
     )
+
+    .post(
+        '/',
+        upload.single('image'),
+        asyncHandler(async (req: Request, res: Response) => {
+            const productData = {...req.body, image: req.file,};
+            const data = await productService.createNewProduct(productData);
+            res.status(201).send(new CommonResponseDTO(true, SuccessMessages.CreateSuccess, data));
+        })
+    )
+
+    .patch(
+        '/:id',
+        upload.single('image'), // Handle image upload
+        asyncHandler(async (req: Request, res: Response) => {
+            const { id } = req.params;
+            const updatedData = { ...req.body, image: req.file };
+
+            const data = await productService.updateProduct(id, updatedData);
+            res.status(200).send(new CommonResponseDTO(true, SuccessMessages.UpdateSuccess, data));
+        })
+    )
+
+    .delete(
+        '/:id',
+        asyncHandler(async (req: Request, res: Response) => {
+            const { id } = req.params;
+
+            await productService.deleteProduct(id);
+            res.status(200).send(new CommonResponseDTO(true, SuccessMessages.DeleteSuccess));
+        })
+    )
+
+
 
 export default controller;

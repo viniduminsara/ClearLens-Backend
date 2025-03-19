@@ -24,7 +24,7 @@ export class ProductResponseDTO {
         productDTO.gender = product.gender;
         productDTO.weight = product.weight;
         productDTO.quantity = product.quantity;
-        productDTO.image = product.image;
+        productDTO.image = product.image as string;
         productDTO.rating = product.rating;
         productDTO.price = product.price;
         productDTO.newPrice = product.newPrice;
