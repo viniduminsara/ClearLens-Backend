@@ -35,7 +35,12 @@ const schema = new Schema<IUser>(
                 type: mongoose.Schema.Types.ObjectId,
                 ref: Address
             }
-        ]
+        ],
+        role: {
+            type: String,
+            enum: ['USER', 'ADMIN'],
+            required: true,
+        }
     },
     {
         timestamps: true,

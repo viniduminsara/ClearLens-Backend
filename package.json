@@ -12,19 +12,11 @@
     "lint": "eslint . --ext .ts",
     "lint-fix": "eslint . --ext .ts --fix"
   },
-  "readmeFilename": "README.md",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Leka-Workshop/Express-APIvantage.git"
-  },
   "author": {
     "name": "Vinidu Minsara"
   },
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/Leka-Workshop/Express-APIvantage/issues"
-  },
-  "homepage": "https://github.com/Leka-Workshop/Express-APIvantage#readme",
+  "homepage": "",
   "dependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/crypto-js": "^4.2.2",

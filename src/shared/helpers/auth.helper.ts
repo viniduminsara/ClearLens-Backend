@@ -9,6 +9,7 @@ export const generateJwtToken = (user: IUser) => {
     const payload = {
         id: user._id,
         email: user.email,
+        role: user.role,
     }
     return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d'});
 }

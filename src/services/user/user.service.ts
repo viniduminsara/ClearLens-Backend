@@ -30,6 +30,7 @@ export const createNewUser = async (
     newUser.username = userData.username;
     newUser.email = userData.email;
     newUser.password = hashedPassword;
+    newUser.role = 'USER';
 
     const [error] = await to(newUser.save());
 

@@ -9,4 +9,5 @@ export interface IUser extends Document {
     cart: IProduct[],
     wishlist: IProduct[],
     addresses: IAddress[],
+    role: 'USER' | 'ADMIN'
 }
