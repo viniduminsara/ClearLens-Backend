@@ -6,6 +6,7 @@ import {InternalServerErrorException, UnauthorizedException} from '../exceptions
 interface DecodedToken {
     id: string;
     email: string;
+    role: string;
 }
 
 export const authenticateUser = asyncHandler(async (
@@ -28,9 +29,20 @@ export const authenticateUser = asyncHandler(async (
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET) as DecodedToken;
 
-        req.user = { id: decoded.id, email: decoded.email }; // Attach user info to request
+        req.user = { id: decoded.id, email: decoded.email, role: decoded.role }; // Attach user info to request
         next();
     } catch (error) {
         throw new UnauthorizedException('Unauthorized: Invalid token.');
     }
+});
+
+export const authorizeAdmin = asyncHandler(async (
+    req: Request,
+    _: Response,
+    next: NextFunction
+) => {
+    if (req.user?.role !== 'ADMIN') {
+        throw new UnauthorizedException('Access denied: Admin Users only.');
+    }
+    next();
 });

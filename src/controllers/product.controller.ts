@@ -5,6 +5,7 @@ import * as productService from '../services/product/product.service';
 import {CommonResponseDTO} from '../shared/models/DTO/CommonResponseDTO';
 import {SuccessMessages} from '../shared/enums/messages/success-messages.enum';
 import {IdValidator} from '../shared/middlewares/user-validator.middleware';
+import {authenticateUser, authorizeAdmin} from '../shared/middlewares/authentication.middleware';
 
 const upload = multer({ storage: multer.memoryStorage() });
 const controller = Router();
@@ -41,6 +42,8 @@ controller
     .post(
         '/',
         upload.single('image'),
+        authenticateUser,
+        authorizeAdmin,
         asyncHandler(async (req: Request, res: Response) => {
             const productData = {...req.body, image: req.file,};
             const data = await productService.createNewProduct(productData);
@@ -50,7 +53,9 @@ controller
 
     .patch(
         '/:id',
-        upload.single('image'), // Handle image upload
+        upload.single('image'),
+        authenticateUser,
+        authorizeAdmin,
         asyncHandler(async (req: Request, res: Response) => {
             const { id } = req.params;
             const updatedData = { ...req.body, image: req.file };
@@ -62,6 +67,8 @@ controller
 
     .delete(
         '/:id',
+        authenticateUser,
+        authorizeAdmin,
         asyncHandler(async (req: Request, res: Response) => {
             const { id } = req.params;
 

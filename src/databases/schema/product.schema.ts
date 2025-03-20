@@ -4,7 +4,6 @@ import {IProduct} from '../model/product.model';
 
 const schema = new Schema<IProduct>(
     {
-        qty: { type: Number, required: true },
         name: { type: String, required: true },
         description: { type: String, required: true },
         brand: { type: String, required: true },

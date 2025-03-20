@@ -8,7 +8,6 @@ export interface FileWithBuffer {
 }
 
 export interface IProduct extends Document {
-    qty: number,
     name: string,
     description: string,
     brand: string,
