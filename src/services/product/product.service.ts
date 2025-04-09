@@ -129,6 +129,23 @@ export const deleteProduct = async (productId: string): Promise<void> => {
     }
 };
 
+// GET /api/v1/products/search?searchTerm=****
+export const searchProductsByName = async (
+    name: string
+): Promise<ProductResponseDTO[]> => {
+    const regex = new RegExp(name, 'i');
+    const [error, products] = await to(
+        ProductModel.find({ name: regex }).lean()
+    );
+
+    if (error) {
+        throw new InternalServerErrorException(ErrorMessages.GetFail);
+    }
+
+    return products.map(product => ProductResponseDTO.toResponse(product));
+};
+
+
 
 
 
