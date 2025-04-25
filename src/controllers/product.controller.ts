@@ -13,12 +13,21 @@ const controller = Router();
 
 controller
 
-    .get(
+    .post(
         '/',
         asyncHandler(async (req: Request, res: Response) => {
             const page = parseInt(req.query.page as string) || 1;
             const limit = parseInt(req.query.limit as string) || 9;
-            const data = await productService.retrieveProducts(page, limit);
+
+            const {
+                sort = 'ASC',
+                gender = 'All',
+                categories = [],
+                minPrice = undefined,
+                maxPrice = undefined
+            } = req.body;
+
+            const data = await productService.retrieveProducts(page, limit, sort, gender, categories, minPrice, maxPrice);
             res.status(200).send(new CommonResponseDTO(true, SuccessMessages.GetSuccess, data));
         })
     )
