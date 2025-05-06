@@ -14,6 +14,9 @@ import {IMongooseError} from '../../shared/models/extensions/errors.extension';
 import {hashPaymentDetails} from '../../shared/helpers/payment-hash.helper';
 import {PaymentHashResponseDTO} from '../../shared/models/DTO/PaymentHashResponseDTO';
 import {UserResponseDTO} from '../../shared/models/DTO/userResponseDTO';
+import {OrderPaymentStatus, OrderStatus} from '../../shared/enums/db/order.enum';
+import {OrderResponseDTO} from '../../shared/models/DTO/OrderResponseDTO';
+import {PaginateResult} from 'mongoose';
 
 export const initializeNewOrder = async (
     orderData: IOrder,
@@ -43,12 +46,16 @@ export const initializeNewOrder = async (
     const newOrder = new OrderModel({
         date: new Date(),
         amount: orderData.amount,
-        paymentStatus: 'PENDING',
+        paymentStatus: OrderPaymentStatus.PENDING,
         user: existingUser._id,
         address: existingAddress._id,
-        status: 'PROCESS',
+        status: OrderStatus.PROCESS,
         orderItems: orderData.orderItems.map(item => ({
-            product: item.product,
+            id: item.product._id,
+            name: item.product.name,
+            image: item.product.image,
+            price: item.product.price,
+            newPrice: item.product.newPrice,
             qty: item.qty,
         }))
     });
@@ -91,7 +98,7 @@ export const completeOrderPayment = async (
         throw new InternalServerErrorException(ErrorMessages.UpdateFail);
     }
 
-    if (orderData.paymentStatus === 'SUCCESS') {
+    if (orderData.paymentStatus === OrderPaymentStatus.SUCCESS) {
         const [error, updatedUser] = await to(
             UserModel.findOneAndUpdate(
                 { _id: updatedOrder.user._id },
@@ -115,5 +122,65 @@ export const completeOrderPayment = async (
 
         return UserResponseDTO.toResponse(updatedUser);
     }
+};
+
+export const retrieveOrders = async (
+    page: number,
+    limit: number,
+): Promise<PaginateResult<OrderResponseDTO>> => {
+
+    const [error, result] = await to(OrderModel.paginate({}, { page, limit }));
+
+    if (error) {
+        throw new InternalServerErrorException(ErrorMessages.GetFail);
+    }
+
+    return {
+        ...result,
+        docs: result.docs.map((order) => OrderResponseDTO.toResponse(order))
+    };
+}
+
+export const retrieveOrderById = async (
+    id: string
+): Promise<OrderResponseDTO> => {
+    const [error, existingOrder] = await to(
+        OrderModel.findById(id)
+            .populate({path: 'user'})
+            .lean()
+    );
+
+    if (!existingOrder) {
+        throw new NotFoundException(`User with id: ${id} was not found!`);
+    }
+
+    if (error) {
+        throw new InternalServerErrorException(ErrorMessages.GetFail);
+    }
+
+    return OrderResponseDTO.toResponse(existingOrder);
+};
+
+export const updateOrderStatus = async (
+    orderId: string,
+    orderStatus: OrderStatus,
+): Promise<OrderResponseDTO> => {
+    const [updateError, updatedOrder] = await to(
+        OrderModel.findByIdAndUpdate(
+            orderId,
+            { status: orderStatus },
+            { new: true }
+        )
+    );
+
+    if (!updatedOrder) {
+        throw new NotFoundException(`Order with id: ${orderId} was not found!`);
+    }
+
+    if (updateError) {
+        throw new InternalServerErrorException(ErrorMessages.UpdateFail);
+    }
+
+    return OrderResponseDTO.toResponse(updatedOrder);
 };
 

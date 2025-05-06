@@ -1,8 +1,9 @@
-import {model, Schema} from 'mongoose';
+import mongoose, {model, Schema} from 'mongoose';
 import {IOrder} from '../model/order.model';
 import User from '../../databases/schema/user.schema';
-import Product from '../../databases/schema/product.schema';
 import Address from '../../databases/schema/address.schema';
+import {OrderPaymentStatus, OrderStatus} from '../../shared/enums/db/order.enum';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
 const schema = new Schema<IOrder>(
     {
@@ -16,11 +17,11 @@ const schema = new Schema<IOrder>(
         },
         status: {
             type: String,
-            enum: ['PROCESS', 'DELIVER', 'COMPLETED'],
+            enum: OrderStatus,
         },
         paymentStatus: {
             type: String,
-            enum: ['PENDING', 'SUCCESS', 'FAILED'],
+            enum: OrderPaymentStatus,
             required: true,
         },
         address: {
@@ -33,7 +34,11 @@ const schema = new Schema<IOrder>(
         },
         orderItems: [
             {
-                product: { type: Schema.Types.ObjectId, ref: Product },
+                _id: String,
+                name: String,
+                image: String,
+                price: Number,
+                newPrice: Number,
                 qty: Number,
             }
         ]
@@ -43,5 +48,10 @@ const schema = new Schema<IOrder>(
     }
 )
 
-export default model<IOrder>('Order', schema);
+// Apply pagination plugin
+schema.plugin(mongoosePaginate);
+
+// Export as a paginated model
+const Order = model<IOrder, mongoose.PaginateModel<IOrder>>('Order', schema);
+export default Order;
 

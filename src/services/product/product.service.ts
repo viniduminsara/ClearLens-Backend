@@ -38,6 +38,7 @@ export const retrieveProducts = async (
 
     // Price Range filter
     if (minPrice !== undefined || maxPrice !== undefined) {
+
         filter.newPrice = {};
         if (minPrice !== undefined) filter.newPrice.$gte = minPrice;
         if (maxPrice !== undefined) filter.newPrice.$lte = maxPrice;
