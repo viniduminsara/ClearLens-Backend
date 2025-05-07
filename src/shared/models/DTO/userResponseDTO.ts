@@ -7,6 +7,7 @@ export class UserResponseDTO {
     email!: string;
     cart!: IProduct[];
     wishlist!: IProduct[];
+    role!: string;
 
     static toResponse(user: IUser): UserResponseDTO {
         const userDTO = new UserResponseDTO();
@@ -15,6 +16,7 @@ export class UserResponseDTO {
         userDTO.email = user.email;
         userDTO.cart = user.cart;
         userDTO.wishlist = user.wishlist;
+        userDTO.role = user.role;
 
         return userDTO;
     }
