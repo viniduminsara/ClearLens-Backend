@@ -12,7 +12,7 @@ import {
 import {IdValidator} from '../shared/middlewares/user-validator.middleware';
 import {OrderStatus} from '../shared/enums/db/order.enum';
 
-const controller = Router(); // <-- add semicolon here
+const controller = Router();
 
 controller
     // GET /api/v1/orders
