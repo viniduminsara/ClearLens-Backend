@@ -38,3 +38,18 @@ export const completePaymentValidator = asyncHandler(async (
 
     next();
 });
+
+export const updateOrderStatusValidator = asyncHandler(async (
+    req: Request,
+    _: Response,
+    next: NextFunction
+) => {
+
+    if (!req.params?.id)
+        throw new BadRequestException('Required parameter "id" is missing!');
+
+    if (!req.query.orderStatus)
+        throw new BadRequestException('Missing "status" value!');
+
+    next();
+});

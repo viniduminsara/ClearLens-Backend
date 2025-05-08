@@ -18,6 +18,7 @@ import {generateJwtToken} from '../../shared/helpers/auth.helper';
 import {TokenResponseDTO} from '../../shared/models/DTO/tokenResponseDTO';
 import {AddressResponseDTO} from '../../shared/models/DTO/AddressResponseDTO';
 import {IAddress} from '../../databases/model/address.model';
+import {PaginateResult} from 'mongoose';
 
 // POST /api/v1/users/signup
 export const createNewUser = async (
@@ -81,19 +82,21 @@ export const signInUser = async (
 }
 
 // GET /api/v1/users
-export const retrieveUsers = async (): Promise<UserResponseDTO[]> => {
+export const retrieveUsers = async (
+    page: number,
+    limit: number,
+): Promise<PaginateResult<UserResponseDTO>> => {
 
-    const [error, users] = await to(UserModel.find({}));
+    const [error, result] = await to(UserModel.paginate({}, { page, limit }));
 
     if (error) {
         throw new InternalServerErrorException(ErrorMessages.GetFail);
     }
 
-    if (!users?.length) {
-        return [];
-    }
-
-    return users.map((user) => UserResponseDTO.toResponse(user));
+    return {
+        ...result,
+        docs: result.docs.map((user) => UserResponseDTO.toResponse(user))
+    };
 };
 
 // GET /api/v1/users/:id
