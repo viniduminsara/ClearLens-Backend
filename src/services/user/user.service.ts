@@ -13,7 +13,7 @@ import {
 } from '../../shared/exceptions/http.exceptions';
 import {UserResponseDTO} from '../../shared/models/DTO/userResponseDTO';
 import {IMongooseError} from '../../shared/models/extensions/errors.extension';
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import {generateJwtToken} from '../../shared/helpers/auth.helper';
 import {TokenResponseDTO} from '../../shared/models/DTO/tokenResponseDTO';
 import {AddressResponseDTO} from '../../shared/models/DTO/AddressResponseDTO';
