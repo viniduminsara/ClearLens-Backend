@@ -6,18 +6,28 @@ import {CommonResponseDTO} from '../shared/models/DTO/CommonResponseDTO';
 import {SuccessMessages} from '../shared/enums/messages/success-messages.enum';
 import {IdValidator} from '../shared/middlewares/user-validator.middleware';
 import {authenticateUser, authorizeAdmin} from '../shared/middlewares/authentication.middleware';
+import {SearchTermValidator} from '../shared/middlewares/product-validator.middleware';
 
 const upload = multer({ storage: multer.memoryStorage() });
 const controller = Router();
 
 controller
 
-    .get(
+    .post(
         '/',
         asyncHandler(async (req: Request, res: Response) => {
             const page = parseInt(req.query.page as string) || 1;
             const limit = parseInt(req.query.limit as string) || 9;
-            const data = await productService.retrieveProducts(page, limit);
+
+            const {
+                sort = 'ASC',
+                gender = 'All',
+                categories = [],
+                minPrice = undefined,
+                maxPrice = undefined
+            } = req.body;
+
+            const data = await productService.retrieveProducts(page, limit, sort, gender, categories, minPrice, maxPrice);
             res.status(200).send(new CommonResponseDTO(true, SuccessMessages.GetSuccess, data));
         })
     )
@@ -26,6 +36,16 @@ controller
         '/trending',
         asyncHandler(async (req: Request, res: Response) => {
             const data = await productService.retrieveTrendingProducts();
+            res.status(200).send(new CommonResponseDTO(true, SuccessMessages.GetSuccess, data));
+        })
+    )
+
+    .get(
+        '/search',
+        SearchTermValidator,
+        asyncHandler(async (req: Request, res: Response) => {
+            const { searchTerm } = req.query;
+            const data = await productService.searchProductsByName(searchTerm as string);
             res.status(200).send(new CommonResponseDTO(true, SuccessMessages.GetSuccess, data));
         })
     )

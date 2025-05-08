@@ -3,13 +3,11 @@ import asyncHandler from 'express-async-handler';
 import * as userService from '../services/user/user.service';
 import {SuccessMessages} from '../shared/enums/messages/success-messages.enum';
 import {
-    changePasswordValidator,
     createUserValidator,
     IdValidator,
-    updateUserValidator,
     signInUserValidator
 } from '../shared/middlewares/user-validator.middleware';
-import {authenticateUser} from '../shared/middlewares/authentication.middleware';
+import {authenticateUser, authorizeAdmin} from '../shared/middlewares/authentication.middleware';
 import {CommonResponseDTO} from '../shared/models/DTO/CommonResponseDTO';
 
 const controller = Router();
@@ -20,8 +18,12 @@ controller
     .get(
         '/',
         authenticateUser,
+        authorizeAdmin,
         asyncHandler(async (req: Request, res: Response) => {
-            const data = await userService.retrieveUsers();
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 9;
+
+            const data = await userService.retrieveUsers(page, limit);
             res.status(200).send(new CommonResponseDTO(true, SuccessMessages.GetSuccess, data));
         })
     )

@@ -17,10 +17,40 @@ import {IMongooseError} from '../../shared/models/extensions/errors.extension';
 // GET /api/v1/products
 export const retrieveProducts = async (
     page: number,
-    limit: number
+    limit: number,
+    sort: 'ASC' | 'DESC',
+    gender: string,
+    categories: string[],
+    minPrice: number,
+    maxPrice: number
 ): Promise<PaginateResult<ProductResponseDTO>> => {
+    const filter: any = {};
 
-    const [error, result] = await to(ProductModel.paginate({}, { page, limit }));
+    // Gender filter
+    if (gender !== 'All') {
+        filter.gender = gender;
+    }
+
+    // Category filter
+    if (Array.isArray(categories) && categories.length > 0 && !categories.includes('All')) {
+        filter.category = { $in: categories };
+    }
+
+    // Price Range filter
+    if (minPrice !== undefined || maxPrice !== undefined) {
+
+        filter.newPrice = {};
+        if (minPrice !== undefined) filter.newPrice.$gte = minPrice;
+        if (maxPrice !== undefined) filter.newPrice.$lte = maxPrice;
+    }
+
+    const sortOption = { newPrice: sort === 'ASC' ? 1 : -1 };
+
+    const [error, result] = await to(ProductModel.paginate(filter, {
+        page,
+        limit,
+        sort: sortOption,
+    }));
 
     if (error) {
         throw new InternalServerErrorException(ErrorMessages.GetFail);
@@ -128,6 +158,23 @@ export const deleteProduct = async (productId: string): Promise<void> => {
         throw new NotFoundException(ErrorMessages.NotFound);
     }
 };
+
+// GET /api/v1/products/search?searchTerm=****
+export const searchProductsByName = async (
+    name: string
+): Promise<ProductResponseDTO[]> => {
+    const regex = new RegExp(name, 'i');
+    const [error, products] = await to(
+        ProductModel.find({ name: regex }).lean()
+    );
+
+    if (error) {
+        throw new InternalServerErrorException(ErrorMessages.GetFail);
+    }
+
+    return products.map(product => ProductResponseDTO.toResponse(product));
+};
+
 
 
 

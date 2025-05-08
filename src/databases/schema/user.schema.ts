@@ -2,6 +2,7 @@ import mongoose, {Schema, model} from 'mongoose';
 import {IUser} from '../model/user.model';
 import Product from '../../databases/schema/product.schema';
 import Address from '../../databases/schema/address.schema';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
 const schema = new Schema<IUser>(
     {
@@ -47,4 +48,9 @@ const schema = new Schema<IUser>(
     }
 );
 
-export default model<IUser>('User', schema);
+// Apply pagination plugin
+schema.plugin(mongoosePaginate);
+
+// Export as a paginated model
+const User = model<IUser, mongoose.PaginateModel<IUser>>('User', schema);
+export default User;

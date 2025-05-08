@@ -1,17 +1,19 @@
 import {Document} from 'mongoose';
 import {IUser} from './user.model';
 import {IAddress} from './address.model';
+import {IProduct} from './product.model';
+import {OrderPaymentStatus, OrderStatus} from '../../shared/enums/db/order.enum';
 
 export interface IOrderItem {
-    product: string;
+    product: IProduct;
     qty: number;
 }
 
 export interface IOrder extends Document {
     date: Date;
     amount: number;
-    status: 'PROCESS' | 'DELIVER' | 'COMPLETED';
-    paymentStatus: 'PENDING' | 'SUCCESS' | 'FAILED';
+    status: OrderStatus;
+    paymentStatus: OrderPaymentStatus;
     address: IAddress;
     user: IUser;
     orderItems: IOrderItem[]
