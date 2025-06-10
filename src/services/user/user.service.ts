@@ -19,6 +19,7 @@ import {TokenResponseDTO} from '../../shared/models/DTO/tokenResponseDTO';
 import {AddressResponseDTO} from '../../shared/models/DTO/AddressResponseDTO';
 import {IAddress} from '../../databases/model/address.model';
 import {PaginateResult} from 'mongoose';
+import {UserRoles} from '../../shared/enums/db/user.enum';
 
 // POST /api/v1/users/signup
 export const createNewUser = async (
@@ -31,7 +32,7 @@ export const createNewUser = async (
     newUser.username = userData.username;
     newUser.email = userData.email;
     newUser.password = hashedPassword;
-    newUser.role = 'USER';
+    newUser.role = UserRoles.USER;
 
     const [error] = await to(newUser.save());
 

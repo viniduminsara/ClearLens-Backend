@@ -3,6 +3,7 @@ import {IUser} from '../model/user.model';
 import Product from '../../databases/schema/product.schema';
 import Address from '../../databases/schema/address.schema';
 import mongoosePaginate from 'mongoose-paginate-v2';
+import {UserRoles} from '../../shared/enums/db/user.enum';
 
 const schema = new Schema<IUser>(
     {
@@ -39,7 +40,7 @@ const schema = new Schema<IUser>(
         ],
         role: {
             type: String,
-            enum: ['USER', 'ADMIN'],
+            enum: UserRoles,
             required: true,
         }
     },
