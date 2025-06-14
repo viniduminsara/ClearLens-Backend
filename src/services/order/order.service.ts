@@ -124,12 +124,40 @@ export const completeOrderPayment = async (
     }
 };
 
-export const retrieveOrders = async (
+export const retrieveAllOrders = async (
     page: number,
     limit: number,
 ): Promise<PaginateResult<OrderResponseDTO>> => {
 
     const [error, result] = await to(OrderModel.paginate({}, { page, limit }));
+
+    if (error) {
+        throw new InternalServerErrorException(ErrorMessages.GetFail);
+    }
+
+    return {
+        ...result,
+        docs: result.docs.map((order) => OrderResponseDTO.toResponse(order))
+    };
+}
+
+export const retrieveUserOrders = async (
+    userId: string,
+    page: number,
+    limit: number,
+): Promise<PaginateResult<OrderResponseDTO>> => {
+
+    const [error, result] = await to(OrderModel.paginate(
+        {
+            user: userId,
+            paymentStatus: OrderPaymentStatus.SUCCESS
+        },
+        {
+            page,
+            limit,
+            sort: { date: -1 }
+        }
+    ));
 
     if (error) {
         throw new InternalServerErrorException(ErrorMessages.GetFail);

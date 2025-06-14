@@ -58,6 +58,7 @@ export const signInUser = async (
 
     const [error, existingUser] = await to(
         UserModel.findOne({username: userData.username})
+            .select('+password')
             .populate([
                 {path: 'cart'},
                 {path: 'wishlist'},
@@ -106,7 +107,6 @@ export const retrieveUserById = async (
 ): Promise<UserResponseDTO> => {
     const [error, existingUser] = await to(
         UserModel.findById(id)
-            .select('-password')
             .populate([
                 {path: 'cart'},
                 {path: 'wishlist'},
