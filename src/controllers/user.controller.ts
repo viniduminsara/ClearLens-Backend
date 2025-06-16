@@ -4,7 +4,7 @@ import * as userService from '../services/user/user.service';
 import {SuccessMessages} from '../shared/enums/messages/success-messages.enum';
 import {
     createUserValidator,
-    IdValidator,
+    IdValidator, signInGoogleUserValidator,
     signInUserValidator
 } from '../shared/middlewares/user-validator.middleware';
 import {authenticateUser, authorizeAdmin} from '../shared/middlewares/authentication.middleware';
@@ -75,6 +75,28 @@ controller
         signInUserValidator,
         asyncHandler(async (req: Request, res: Response) => {
             const data = await userService.signInUser(req.body);
+            res.status(200).send(new CommonResponseDTO(true, SuccessMessages.CreateSuccess, data));
+        })
+    )
+
+    // POST /api/v1/users/google-signup
+    .post(
+        '/google-signup',
+        signInGoogleUserValidator,
+        asyncHandler(async (req: Request, res: Response) => {
+            const { token } = req.body;
+            const data = await userService.createNewGoogleUser(token);
+            res.status(200).send(new CommonResponseDTO(true, SuccessMessages.CreateSuccess, data));
+        })
+    )
+
+    // POST /api/v1/users/google-signin
+    .post(
+        '/google-signin',
+        signInGoogleUserValidator,
+        asyncHandler(async (req: Request, res: Response) => {
+            const { token } = req.body;
+            const data = await userService.signinWithGoogle(token);
             res.status(200).send(new CommonResponseDTO(true, SuccessMessages.CreateSuccess, data));
         })
     )
