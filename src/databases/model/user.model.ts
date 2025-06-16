@@ -1,7 +1,7 @@
 import {Document} from 'mongoose';
 import {IProduct} from './product.model';
 import {IAddress} from './address.model';
-import {UserRoles} from '../../shared/enums/db/user.enum';
+import {UserAccountTypes, UserRoles} from '../../shared/enums/db/user.enum';
 
 export interface IUser extends Document {
     username: string;
@@ -10,5 +10,6 @@ export interface IUser extends Document {
     cart: IProduct[],
     wishlist: IProduct[],
     addresses: IAddress[],
-    role: UserRoles
+    role: UserRoles,
+    accountType: UserAccountTypes,
 }
