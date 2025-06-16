@@ -19,7 +19,10 @@ import {TokenResponseDTO} from '../../shared/models/DTO/tokenResponseDTO';
 import {AddressResponseDTO} from '../../shared/models/DTO/AddressResponseDTO';
 import {IAddress} from '../../databases/model/address.model';
 import {PaginateResult} from 'mongoose';
-import {UserRoles} from '../../shared/enums/db/user.enum';
+import {UserAccountTypes, UserRoles} from '../../shared/enums/db/user.enum';
+import {OAuth2Client} from 'google-auth-library';
+
+const client = new OAuth2Client(process.env.GOOGLE_0AUTH_CLIENT_ID);
 
 // POST /api/v1/users/signup
 export const createNewUser = async (
@@ -28,11 +31,69 @@ export const createNewUser = async (
 
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-    const newUser = new UserModel();
-    newUser.username = userData.username;
-    newUser.email = userData.email;
-    newUser.password = hashedPassword;
-    newUser.role = UserRoles.USER;
+    const newUser = new UserModel({
+        username: userData.username,
+        email: userData.email,
+        password: hashedPassword,
+        role: UserRoles.USER,
+        accountType: UserAccountTypes.PASSWORD
+    });
+
+    const [error] = await to(newUser.save());
+
+    if (error && MongooseErrors.MongoServerError) {
+        // this conversion is needed because Error class does not have code property
+        const mongooseError = error as IMongooseError;
+
+        if (mongooseError.code === MongooseErrorCodes.UniqueConstraintFail) {
+            throw new ConflictException(ErrorMessages.DuplicateEntryFail);
+        } else {
+            throw new InternalServerErrorException(ErrorMessages.CreateFail);
+        }
+    }
+
+    const token = generateJwtToken(newUser);
+    return TokenResponseDTO.toResponse(newUser, token);
+};
+
+// POST /api/v1/users/signup
+export const createNewGoogleUser = async (
+    idToken: string
+): Promise<TokenResponseDTO> => {
+    const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_0AUTH_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload?.email) {
+        throw new UnauthorizedException('Invalid Google token');
+    }
+
+    const newUserEmail = payload.email;
+    const newUserUsername = payload.name;
+
+    const [findError, existingUser] = await to(
+        UserModel.findOne({
+            email: newUserEmail,
+            accountType: UserAccountTypes.GOOGLE
+        }).populate(['cart', 'wishlist'])
+    );
+
+    if (existingUser) {
+        throw new UnauthorizedException('Already has a account associated with this Google account');
+    }
+
+    if (findError) {
+        throw new InternalServerErrorException(ErrorMessages.CreateFail);
+    }
+
+    const newUser = new UserModel({
+        username: newUserUsername,
+        email: newUserEmail,
+        role: UserRoles.USER,
+        accountType: UserAccountTypes.GOOGLE
+    });
 
     const [error] = await to(newUser.save());
 
@@ -82,6 +143,38 @@ export const signInUser = async (
     const token = generateJwtToken(existingUser);
     return TokenResponseDTO.toResponse(existingUser, token);
 }
+
+export const signinWithGoogle = async (idToken: string): Promise<TokenResponseDTO> => {
+    const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_0AUTH_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload?.email) {
+        throw new UnauthorizedException('Invalid Google token');
+    }
+
+    const userEmail = payload.email;
+
+    const [error, existingUser] = await to(
+        UserModel.findOne({
+            email: userEmail,
+            accountType: UserAccountTypes.GOOGLE
+        }).populate(['cart', 'wishlist'])
+    );
+
+    if (!existingUser) {
+        throw new UnauthorizedException('Could not find any account associated with this Google account');
+    }
+
+    if (error) {
+        throw new InternalServerErrorException(ErrorMessages.CreateFail);
+    }
+
+    const token = generateJwtToken(existingUser);
+    return TokenResponseDTO.toResponse(existingUser, token);
+};
 
 // GET /api/v1/users
 export const retrieveUsers = async (
