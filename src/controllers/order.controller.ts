@@ -11,6 +11,7 @@ import {
 } from '../shared/middlewares/order-validator.middleware';
 import {IdValidator} from '../shared/middlewares/user-validator.middleware';
 import {OrderStatus} from '../shared/enums/db/order.enum';
+import {UserRoles} from '../shared/enums/db/user.enum';
 
 const controller = Router();
 
@@ -19,12 +20,17 @@ controller
     .get(
         '/',
         authenticateUser,
-        authorizeAdmin,
         asyncHandler(async (req: Request, res: Response) => {
             const page = parseInt(req.query.page as string) || 1;
             const limit = parseInt(req.query.limit as string) || 9;
 
-            const data = await orderService.retrieveOrders(page, limit);
+            let data;
+            if (req.user.role === UserRoles.ADMIN) {
+                data = await orderService.retrieveAllOrders(page, limit);
+            } else {
+                data = await orderService.retrieveUserOrders(req.user.id, page, limit);
+            }
+
             res.status(200).send(new CommonResponseDTO(true, SuccessMessages.GetSuccess, data));
         })
     )
