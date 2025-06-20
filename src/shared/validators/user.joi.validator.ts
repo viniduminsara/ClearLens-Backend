@@ -18,6 +18,10 @@ export const signInValidationSchema = Joi.object({
     password: Joi.string().required()
 });
 
+export const signInGoogleValidationSchema = Joi.object({
+    token: Joi.string().required()
+});
+
 // Update User is similar to Create User, but the fields are optional
 export const updateUserValidationSchema = Joi.object({
     username: Joi.string().alphanum().min(3).max(30).optional(),

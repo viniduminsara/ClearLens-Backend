@@ -7,6 +7,7 @@ import AddressModel from '../../databases/schema/address.schema';
 import {MongooseErrorCodes, MongooseErrors,} from '../../shared/enums/db/mongodb-errors.enum';
 import {ErrorMessages} from '../../shared/enums/messages/error-messages.enum';
 import {
+    BadRequestException,
     ConflictException,
     InternalServerErrorException,
     NotFoundException, UnauthorizedException
@@ -19,6 +20,10 @@ import {TokenResponseDTO} from '../../shared/models/DTO/tokenResponseDTO';
 import {AddressResponseDTO} from '../../shared/models/DTO/AddressResponseDTO';
 import {IAddress} from '../../databases/model/address.model';
 import {PaginateResult} from 'mongoose';
+import {UserAccountTypes, UserRoles} from '../../shared/enums/db/user.enum';
+import {OAuth2Client} from 'google-auth-library';
+
+const client = new OAuth2Client(process.env.GOOGLE_0AUTH_CLIENT_ID);
 
 // POST /api/v1/users/signup
 export const createNewUser = async (
@@ -27,11 +32,69 @@ export const createNewUser = async (
 
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-    const newUser = new UserModel();
-    newUser.username = userData.username;
-    newUser.email = userData.email;
-    newUser.password = hashedPassword;
-    newUser.role = 'USER';
+    const newUser = new UserModel({
+        username: userData.username,
+        email: userData.email,
+        password: hashedPassword,
+        role: UserRoles.USER,
+        accountType: UserAccountTypes.PASSWORD
+    });
+
+    const [error] = await to(newUser.save());
+
+    if (error && MongooseErrors.MongoServerError) {
+        // this conversion is needed because Error class does not have code property
+        const mongooseError = error as IMongooseError;
+
+        if (mongooseError.code === MongooseErrorCodes.UniqueConstraintFail) {
+            throw new ConflictException(ErrorMessages.DuplicateEntryFail);
+        } else {
+            throw new InternalServerErrorException(ErrorMessages.CreateFail);
+        }
+    }
+
+    const token = generateJwtToken(newUser);
+    return TokenResponseDTO.toResponse(newUser, token);
+};
+
+// POST /api/v1/users/signup
+export const createNewGoogleUser = async (
+    idToken: string
+): Promise<TokenResponseDTO> => {
+    const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_0AUTH_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload?.email) {
+        throw new UnauthorizedException('Invalid Google token');
+    }
+
+    const newUserEmail = payload.email;
+    const newUserUsername = payload.name;
+
+    const [findError, existingUser] = await to(
+        UserModel.findOne({
+            email: newUserEmail,
+            accountType: UserAccountTypes.GOOGLE
+        }).populate(['cart', 'wishlist'])
+    );
+
+    if (existingUser) {
+        throw new UnauthorizedException('Already has a account associated with this Google account');
+    }
+
+    if (findError) {
+        throw new InternalServerErrorException(ErrorMessages.CreateFail);
+    }
+
+    const newUser = new UserModel({
+        username: newUserUsername,
+        email: newUserEmail,
+        role: UserRoles.USER,
+        accountType: UserAccountTypes.GOOGLE
+    });
 
     const [error] = await to(newUser.save());
 
@@ -57,6 +120,7 @@ export const signInUser = async (
 
     const [error, existingUser] = await to(
         UserModel.findOne({username: userData.username})
+            .select('+password')
             .populate([
                 {path: 'cart'},
                 {path: 'wishlist'},
@@ -80,6 +144,38 @@ export const signInUser = async (
     const token = generateJwtToken(existingUser);
     return TokenResponseDTO.toResponse(existingUser, token);
 }
+
+export const signinWithGoogle = async (idToken: string): Promise<TokenResponseDTO> => {
+    const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_0AUTH_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload?.email) {
+        throw new UnauthorizedException('Invalid Google token');
+    }
+
+    const userEmail = payload.email;
+
+    const [error, existingUser] = await to(
+        UserModel.findOne({
+            email: userEmail,
+            accountType: UserAccountTypes.GOOGLE
+        }).populate(['cart', 'wishlist'])
+    );
+
+    if (!existingUser) {
+        throw new UnauthorizedException('Could not find any account associated with this Google account');
+    }
+
+    if (error) {
+        throw new InternalServerErrorException(ErrorMessages.CreateFail);
+    }
+
+    const token = generateJwtToken(existingUser);
+    return TokenResponseDTO.toResponse(existingUser, token);
+};
 
 // GET /api/v1/users
 export const retrieveUsers = async (
@@ -105,7 +201,6 @@ export const retrieveUserById = async (
 ): Promise<UserResponseDTO> => {
     const [error, existingUser] = await to(
         UserModel.findById(id)
-            .select('-password')
             .populate([
                 {path: 'cart'},
                 {path: 'wishlist'},
@@ -356,13 +451,24 @@ export const createNewUserAddress = async (
     userId: string,
 ): Promise<AddressResponseDTO[]> => {
 
-    const newAddress = new AddressModel();
-    newAddress.fullName = addressData.fullName;
-    newAddress.mobileNumber = addressData.mobileNumber;
-    newAddress.houseNo = addressData.houseNo;
-    newAddress.street = addressData.street;
-    newAddress.city = addressData.city;
-    newAddress.postalCode = addressData.postalCode;
+    const user = await UserModel.findById(userId).populate('addresses');
+
+    if (!user) {
+        throw new NotFoundException(`User with id: ${userId} was not found!`);
+    }
+
+    if (user.addresses.length >= 3) {
+        throw new BadRequestException('You can only save up to 3 addresses.');
+    }
+
+    const newAddress = new AddressModel({
+        fullName: addressData.fullName,
+        mobileNumber: addressData.mobileNumber,
+        houseNo: addressData.houseNo,
+        street: addressData.street,
+        city: addressData.city,
+        postalCode: addressData.postalCode,
+    });
 
     const [error] = await to(newAddress.save());
 
@@ -395,6 +501,73 @@ export const createNewUserAddress = async (
     }
 
     return updatedUser.addresses.map(address => AddressResponseDTO.toResponse(address))
+};
+
+// PATCH /api/v1/users/addresses/:addressId
+export const updateUserAddress = async (
+    userId: string,
+    addressId: string,
+    updatedData: IAddress
+): Promise<AddressResponseDTO[]> => {
+    const user = await UserModel.findOne({ _id: userId, addresses: addressId });
+
+    if (!user) {
+        throw new UnauthorizedException('You do not have permission to update this address.');
+    }
+
+    const [updateError, updatedAddress] = await to(
+        AddressModel.findByIdAndUpdate(
+            addressId, updatedData, { new: true, runValidators: true }
+        )
+    );
+
+    if (updateError) {
+        throw new InternalServerErrorException(ErrorMessages.UpdateFail);
+    }
+
+    if (!updatedAddress) {
+        throw new NotFoundException(`Address with id: ${addressId} not found.`);
+    }
+
+    const updatedUser = await UserModel.findById(userId).populate('addresses');
+
+    if (!updatedUser) {
+        throw new NotFoundException(`User with id: ${userId} was not found!`);
+    }
+
+    return updatedUser.addresses.map(address => AddressResponseDTO.toResponse(address));
+};
+
+// DELETE /api/v1/users/addresses/:addressId
+export const deleteUserAddress = async (
+    userId: string,
+    addressId: string,
+): Promise<AddressResponseDTO[]> => {
+    const user = await UserModel.findOne({ _id: userId, addresses: addressId });
+
+    if (!user) {
+        throw new UnauthorizedException('You do not have permission to delete this address.');
+    }
+
+    const [userUpdateError, updatedUser] = await to(
+        UserModel.findByIdAndUpdate(
+            userId,
+            { $pull: { addresses: addressId } },
+            { new: true }
+        ).populate('addresses')
+    );
+
+    if (userUpdateError || !updatedUser) {
+        throw new InternalServerErrorException(ErrorMessages.UpdateFail);
+    }
+
+    const [deleteError] = await to(AddressModel.findByIdAndDelete(addressId));
+
+    if (deleteError) {
+        throw new InternalServerErrorException(ErrorMessages.DeleteFail);
+    }
+
+    return updatedUser.addresses.map(address => AddressResponseDTO.toResponse(address));
 };
 
 

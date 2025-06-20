@@ -7,7 +7,7 @@ import {
     createUserValidationSchema,
     updateUserValidationSchema,
     getUserIdValidationSchema,
-    signInValidationSchema
+    signInValidationSchema, signInGoogleValidationSchema
 } from '../validators/user.joi.validator';
 
 export const createUserValidator = asyncHandler(async (
@@ -37,6 +37,23 @@ export const signInUserValidator = asyncHandler(async (
 
     // the validateAsync method is built into Joi
     const [error] = await to(signInValidationSchema.validateAsync(req.body));
+
+    if (error)
+        throw new BadRequestException(error.message);
+
+    next();
+});
+
+export const signInGoogleUserValidator = asyncHandler(async (
+    req: Request,
+    _: Response,
+    next: NextFunction
+) => {
+    if (!req.body)
+        throw new BadRequestException('Missing request body!');
+
+    // the validateAsync method is built into Joi
+    const [error] = await to(signInGoogleValidationSchema.validateAsync(req.body));
 
     if (error)
         throw new BadRequestException(error.message);

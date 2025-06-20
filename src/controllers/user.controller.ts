@@ -4,7 +4,7 @@ import * as userService from '../services/user/user.service';
 import {SuccessMessages} from '../shared/enums/messages/success-messages.enum';
 import {
     createUserValidator,
-    IdValidator,
+    IdValidator, signInGoogleUserValidator,
     signInUserValidator
 } from '../shared/middlewares/user-validator.middleware';
 import {authenticateUser, authorizeAdmin} from '../shared/middlewares/authentication.middleware';
@@ -79,6 +79,28 @@ controller
         })
     )
 
+    // POST /api/v1/users/google-signup
+    .post(
+        '/google-signup',
+        signInGoogleUserValidator,
+        asyncHandler(async (req: Request, res: Response) => {
+            const { token } = req.body;
+            const data = await userService.createNewGoogleUser(token);
+            res.status(200).send(new CommonResponseDTO(true, SuccessMessages.CreateSuccess, data));
+        })
+    )
+
+    // POST /api/v1/users/google-signin
+    .post(
+        '/google-signin',
+        signInGoogleUserValidator,
+        asyncHandler(async (req: Request, res: Response) => {
+            const { token } = req.body;
+            const data = await userService.signinWithGoogle(token);
+            res.status(200).send(new CommonResponseDTO(true, SuccessMessages.CreateSuccess, data));
+        })
+    )
+
     // POST /api/v1/users/addresses
     .post(
         '/addresses',
@@ -111,6 +133,16 @@ controller
         })
     )
 
+    // PATCH /api/v1/users/addresses/:addressId
+    .patch(
+        '/addresses/:id',
+        authenticateUser,
+        asyncHandler(async (req: Request, res: Response) => {
+            const data = await userService.updateUserAddress(req.user.id, req.params.id, req.body);
+            res.status(200).send(new CommonResponseDTO(true, SuccessMessages.CreateSuccess, data));
+        })
+    )
+
     // DELETE /api/v1/users/cart/:id
     .delete(
         '/cart/:id',
@@ -130,6 +162,16 @@ controller
         asyncHandler(async (req: Request, res: Response) => {
             const data = await userService.removeWishlistItem(req.user.id ,req.params.id);
             res.status(200).send(new CommonResponseDTO(true, SuccessMessages.DeleteSuccess, data));
+        })
+    )
+
+    // DELETE /api/v1/users/addresses/:addressId
+    .delete(
+        '/addresses/:id',
+        authenticateUser,
+        asyncHandler(async (req: Request, res: Response) => {
+            const data = await userService.deleteUserAddress(req.user.id, req.params.id);
+            res.status(200).send(new CommonResponseDTO(true, SuccessMessages.CreateSuccess, data));
         })
     )
 

@@ -3,6 +3,7 @@ import {IUser} from '../model/user.model';
 import Product from '../../databases/schema/product.schema';
 import Address from '../../databases/schema/address.schema';
 import mongoosePaginate from 'mongoose-paginate-v2';
+import {UserAccountTypes, UserRoles} from '../../shared/enums/db/user.enum';
 
 const schema = new Schema<IUser>(
     {
@@ -13,7 +14,8 @@ const schema = new Schema<IUser>(
         },
         password: {
             type: String,
-            required: true
+            required: false,
+            select: false
         },
         email: {
             type: String,
@@ -39,7 +41,12 @@ const schema = new Schema<IUser>(
         ],
         role: {
             type: String,
-            enum: ['USER', 'ADMIN'],
+            enum: UserRoles,
+            required: true,
+        },
+        accountType: {
+            type: String,
+            enum: UserAccountTypes,
             required: true,
         }
     },
