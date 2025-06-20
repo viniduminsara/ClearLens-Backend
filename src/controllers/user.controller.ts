@@ -133,6 +133,16 @@ controller
         })
     )
 
+    // PATCH /api/v1/users/addresses/:addressId
+    .patch(
+        '/addresses/:id',
+        authenticateUser,
+        asyncHandler(async (req: Request, res: Response) => {
+            const data = await userService.updateUserAddress(req.user.id, req.params.id, req.body);
+            res.status(200).send(new CommonResponseDTO(true, SuccessMessages.CreateSuccess, data));
+        })
+    )
+
     // DELETE /api/v1/users/cart/:id
     .delete(
         '/cart/:id',
@@ -152,6 +162,16 @@ controller
         asyncHandler(async (req: Request, res: Response) => {
             const data = await userService.removeWishlistItem(req.user.id ,req.params.id);
             res.status(200).send(new CommonResponseDTO(true, SuccessMessages.DeleteSuccess, data));
+        })
+    )
+
+    // DELETE /api/v1/users/addresses/:addressId
+    .delete(
+        '/addresses/:id',
+        authenticateUser,
+        asyncHandler(async (req: Request, res: Response) => {
+            const data = await userService.deleteUserAddress(req.user.id, req.params.id);
+            res.status(200).send(new CommonResponseDTO(true, SuccessMessages.CreateSuccess, data));
         })
     )
 

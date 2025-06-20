@@ -7,6 +7,7 @@ import AddressModel from '../../databases/schema/address.schema';
 import {MongooseErrorCodes, MongooseErrors,} from '../../shared/enums/db/mongodb-errors.enum';
 import {ErrorMessages} from '../../shared/enums/messages/error-messages.enum';
 import {
+    BadRequestException,
     ConflictException,
     InternalServerErrorException,
     NotFoundException, UnauthorizedException
@@ -450,13 +451,24 @@ export const createNewUserAddress = async (
     userId: string,
 ): Promise<AddressResponseDTO[]> => {
 
-    const newAddress = new AddressModel();
-    newAddress.fullName = addressData.fullName;
-    newAddress.mobileNumber = addressData.mobileNumber;
-    newAddress.houseNo = addressData.houseNo;
-    newAddress.street = addressData.street;
-    newAddress.city = addressData.city;
-    newAddress.postalCode = addressData.postalCode;
+    const user = await UserModel.findById(userId).populate('addresses');
+
+    if (!user) {
+        throw new NotFoundException(`User with id: ${userId} was not found!`);
+    }
+
+    if (user.addresses.length >= 3) {
+        throw new BadRequestException('You can only save up to 3 addresses.');
+    }
+
+    const newAddress = new AddressModel({
+        fullName: addressData.fullName,
+        mobileNumber: addressData.mobileNumber,
+        houseNo: addressData.houseNo,
+        street: addressData.street,
+        city: addressData.city,
+        postalCode: addressData.postalCode,
+    });
 
     const [error] = await to(newAddress.save());
 
@@ -489,6 +501,73 @@ export const createNewUserAddress = async (
     }
 
     return updatedUser.addresses.map(address => AddressResponseDTO.toResponse(address))
+};
+
+// PATCH /api/v1/users/addresses/:addressId
+export const updateUserAddress = async (
+    userId: string,
+    addressId: string,
+    updatedData: IAddress
+): Promise<AddressResponseDTO[]> => {
+    const user = await UserModel.findOne({ _id: userId, addresses: addressId });
+
+    if (!user) {
+        throw new UnauthorizedException('You do not have permission to update this address.');
+    }
+
+    const [updateError, updatedAddress] = await to(
+        AddressModel.findByIdAndUpdate(
+            addressId, updatedData, { new: true, runValidators: true }
+        )
+    );
+
+    if (updateError) {
+        throw new InternalServerErrorException(ErrorMessages.UpdateFail);
+    }
+
+    if (!updatedAddress) {
+        throw new NotFoundException(`Address with id: ${addressId} not found.`);
+    }
+
+    const updatedUser = await UserModel.findById(userId).populate('addresses');
+
+    if (!updatedUser) {
+        throw new NotFoundException(`User with id: ${userId} was not found!`);
+    }
+
+    return updatedUser.addresses.map(address => AddressResponseDTO.toResponse(address));
+};
+
+// DELETE /api/v1/users/addresses/:addressId
+export const deleteUserAddress = async (
+    userId: string,
+    addressId: string,
+): Promise<AddressResponseDTO[]> => {
+    const user = await UserModel.findOne({ _id: userId, addresses: addressId });
+
+    if (!user) {
+        throw new UnauthorizedException('You do not have permission to delete this address.');
+    }
+
+    const [userUpdateError, updatedUser] = await to(
+        UserModel.findByIdAndUpdate(
+            userId,
+            { $pull: { addresses: addressId } },
+            { new: true }
+        ).populate('addresses')
+    );
+
+    if (userUpdateError || !updatedUser) {
+        throw new InternalServerErrorException(ErrorMessages.UpdateFail);
+    }
+
+    const [deleteError] = await to(AddressModel.findByIdAndDelete(addressId));
+
+    if (deleteError) {
+        throw new InternalServerErrorException(ErrorMessages.DeleteFail);
+    }
+
+    return updatedUser.addresses.map(address => AddressResponseDTO.toResponse(address));
 };
 
 
