@@ -10,7 +10,7 @@ import {
     updateOrderStatusValidator
 } from '../shared/middlewares/order-validator.middleware';
 import {IdValidator} from '../shared/middlewares/user-validator.middleware';
-import {OrderStatus} from '../shared/enums/db/order.enum';
+import {OrderPaymentStatus, OrderStatus} from '../shared/enums/db/order.enum';
 import {UserRoles} from '../shared/enums/db/user.enum';
 
 const controller = Router();
@@ -23,10 +23,12 @@ controller
         asyncHandler(async (req: Request, res: Response) => {
             const page = parseInt(req.query.page as string) || 1;
             const limit = parseInt(req.query.limit as string) || 9;
+            const orderStatus = (req.query.orderStatus ?? OrderStatus.PROCESS) as string;
+            const paymentStatus = (req.query.paymentStatus ?? OrderPaymentStatus.SUCCESS) as string;
 
             let data;
             if (req.user.role === UserRoles.ADMIN) {
-                data = await orderService.retrieveAllOrders(page, limit);
+                data = await orderService.retrieveAllOrders(page, limit, orderStatus, paymentStatus);
             } else {
                 data = await orderService.retrieveUserOrders(req.user.id, page, limit);
             }
