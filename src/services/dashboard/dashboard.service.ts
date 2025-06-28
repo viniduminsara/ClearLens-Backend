@@ -40,10 +40,27 @@ export const getDashboardData = async (): Promise<DashboardResponseDTO> => {
     }
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const chartData = orderAggregation.map(item => ({
-        month: `${monthNames[item._id.month - 1]}`,
-        sales: item.totalSales
-    }));
+
+    const currentDate = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        months.push({
+            year: date.getFullYear(),
+            month: date.getMonth() + 1,
+            label: monthNames[date.getMonth()]
+        });
+    }
+
+    const chartData = months.map(m => {
+        const found = orderAggregation.find(
+            (item: any) => item._id.year === m.year && item._id.month === m.month
+        );
+        return {
+            month: m.label,
+            sales: found ? found.totalSales : 0
+        };
+    });
 
     const [salesError, totalSales] = await to(
         OrderModel.aggregate([
@@ -80,4 +97,4 @@ export const getDashboardData = async (): Promise<DashboardResponseDTO> => {
     };
 
     return DashboardResponseDTO.toResponse(dashboard);
-}
+};
