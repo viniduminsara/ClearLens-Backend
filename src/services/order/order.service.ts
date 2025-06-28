@@ -127,9 +127,14 @@ export const completeOrderPayment = async (
 export const retrieveAllOrders = async (
     page: number,
     limit: number,
+    orderStatus: string,
+    paymentStatus: string,
 ): Promise<PaginateResult<OrderResponseDTO>> => {
 
-    const [error, result] = await to(OrderModel.paginate({}, { page, limit }));
+    const [error, result] = await to(OrderModel.paginate(
+        { status: orderStatus, paymentStatus: paymentStatus },
+        { page, limit, sort: { date: -1 } }
+    ));
 
     if (error) {
         throw new InternalServerErrorException(ErrorMessages.GetFail);
