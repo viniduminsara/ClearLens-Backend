@@ -1,0 +1,38 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: clearlens-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: clearlens
+
+  app:
+    build:
+      context: .
+      target: production
+    container_name: clearlens-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT:-3000}
+      MONGODB_URI: mongodb://mongodb:27017/clearlens
+      JWT_SECRET: ${JWT_SECRET}
+      MERCHANT_ID: ${MERCHANT_ID}
+      MERCHANT_SECRET: ${MERCHANT_SECRET}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_S3_FOLDER: ${AWS_S3_FOLDER}
+      GOOGLE_0AUTH_CLIENT_ID: ${GOOGLE_0AUTH_CLIENT_ID}
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data:

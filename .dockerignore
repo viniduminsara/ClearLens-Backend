@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+logs
+.git
+.gitignore
+*.md
+.idea
+uploads
