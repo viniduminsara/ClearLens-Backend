@@ -11,6 +11,7 @@ services:
       MONGO_INITDB_DATABASE: clearlens
 
   app:
+    image: viniduminsara/clearlens-backend:latest
     build:
       context: .
       target: production
