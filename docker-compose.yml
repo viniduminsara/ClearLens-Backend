@@ -32,8 +32,14 @@ services:
       AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
       AWS_S3_FOLDER: ${AWS_S3_FOLDER}
       GOOGLE_0AUTH_CLIENT_ID: ${GOOGLE_0AUTH_CLIENT_ID}
+    networks:
+      - shared-db
     depends_on:
       - mongodb
 
 volumes:
   mongodb_data:
+
+networks:
+  shared-db:
+    external: true
