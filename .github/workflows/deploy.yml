@@ -70,6 +70,9 @@ jobs:
           script: |
             cd /home/${{ secrets.ORACLE_USERNAME }}/clearlens-backend
 
+            # Ensure shared network exists
+            docker network create shared-db || true
+
             # Login to Docker Hub
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
 
